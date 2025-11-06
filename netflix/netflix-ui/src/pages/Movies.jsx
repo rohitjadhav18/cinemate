@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import Navbar from "../components/Navbar";
-import CardSlider from "../components/CardSlider";
+import Slider from "../components/Slider";
 import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "../utils/firebase-config";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchMovies, getGenres } from "../store";
 import SelectGenre from "../components/SelectGenre";
-import Slider from "../components/Slider";
 import NotAvailable from "../components/NotAvailable";
+import { translate } from "../utils/translate";
 
-function MoviePage() {
+function MoviePage({ language, setLanguage }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const movies = useSelector((state) => state.netflix.movies);
   const genres = useSelector((state) => state.netflix.genres);
@@ -38,18 +38,22 @@ function MoviePage() {
   });
 
   window.onscroll = () => {
-    setIsScrolled(window.pageYOffset === 0 ? false : true);
+    setIsScrolled(window.pageYOffset !== 0);
     return () => (window.onscroll = null);
   };
 
+  const translatedMovies = movies.map((movie) => ({
+    ...movie,
+    title: translate(movie.title, language),
+    overview: translate(movie.overview, language),
+  }));
+
   return (
     <Container>
-      <div className="navbar">
-        <Navbar isScrolled={isScrolled} />
-      </div>
+      <Navbar isScrolled={isScrolled} language={language} setLanguage={setLanguage} />
       <div className="data">
         <SelectGenre genres={genres} type="movie" />
-        {movies.length ? <Slider movies={movies} /> : <NotAvailable />}
+        {movies.length ? <Slider movies={translatedMovies} language={language} /> : <NotAvailable />}
       </div>
     </Container>
   );
@@ -65,4 +69,5 @@ const Container = styled.div`
     }
   }
 `;
+
 export default MoviePage;
