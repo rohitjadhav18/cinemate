@@ -12,7 +12,9 @@ import { fetchMovies, getGenres } from "../store";
 import { FaPlay } from "react-icons/fa";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import Slider from "../components/Slider";
-function Netflix() {
+import { translate } from "../utils/translate";
+
+function Netflix({ language, setLanguage }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const movies = useSelector((state) => state.netflix.movies);
   const genres = useSelector((state) => state.netflix.genres);
@@ -21,37 +23,48 @@ function Netflix() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Fetch genres
   useEffect(() => {
     dispatch(getGenres());
   }, []);
 
+  // Fetch movies when genres are loaded
   useEffect(() => {
     if (genresLoaded) {
       dispatch(fetchMovies({ genres, type: "all" }));
     }
   }, [genresLoaded]);
 
+  // Auth check
   onAuthStateChanged(firebaseAuth, (currentUser) => {
     if (!currentUser) navigate("/login");
   });
 
+  // Scroll effect
   window.onscroll = () => {
-    setIsScrolled(window.pageYOffset === 0 ? false : true);
+    setIsScrolled(window.pageYOffset !== 0);
     return () => (window.onscroll = null);
   };
 
+  // Translate movies dynamically
+  const translatedMovies = movies.map((movie) => ({
+    ...movie,
+    title: translate(movie.title, language),
+    overview: translate(movie.overview, language),
+  }));
+
   return (
     <Container>
-      <Navbar isScrolled={isScrolled} />
+      <Navbar isScrolled={isScrolled} language={language} setLanguage={setLanguage} />
       <div className="hero">
         <img
           src={backgroundImage}
-          alt="background"
+          alt={translate("background", language)}
           className="background-image"
         />
         <div className="container">
           <div className="logo">
-            <img src={MovieLogo} alt="Movie Logo" />
+            <img src={MovieLogo} alt={translate("Movie Logo", language)} />
           </div>
           <div className="buttons flex">
             <button
@@ -59,16 +72,18 @@ function Netflix() {
               className="flex j-center a-center"
             >
               <FaPlay />
-              Play
+              {translate("Play", language)}
             </button>
             <button className="flex j-center a-center">
               <AiOutlineInfoCircle />
-              More Info
+              {translate("More Info", language)}
             </button>
           </div>
         </div>
       </div>
-      <Slider movies={movies} />
+
+      {/* Pass language prop to Slider */}
+      <Slider movies={translatedMovies} language={language} />
     </Container>
   );
 }
@@ -101,9 +116,7 @@ const Container = styled.div`
           font-size: 1.4rem;
           gap: 1rem;
           border-radius: 0.2rem;
-          padding: 0.5rem;
-          padding-left: 2rem;
-          padding-right: 2.4rem;
+          padding: 0.5rem 2.4rem 0.5rem 2rem;
           border: none;
           cursor: pointer;
           transition: 0.2s ease-in-out;
@@ -122,4 +135,5 @@ const Container = styled.div`
     }
   }
 `;
+
 export default Netflix;
